@@ -4,15 +4,15 @@ docker-build:
 	docker build -t cs-ttb/tigerlabs_env .
 
 docker-pull:
-	docker pull yuexizou/tiger-compiler-env:new
+	docker pull yuexizou/tiger-compiler-env:tiger
 
 docker-run:
 	docker run -it --platform linux/amd64 --privileged -p 2222:22 \
-		-v $(shell pwd):/home/stu/tiger-compiler yuexizou/tiger-compiler-env:new
+		-v $(shell pwd):/home/stu/tiger-compiler yuexizou/tiger-compiler-env:tiger
 
 docker-run-backend:
 	docker run -dt --cap-add=SYS_PTRACE --security-opt seccomp=unconfined --security-opt apparmor=unconfined -p 2222:22 \
-		-v $(shell pwd):/home/stu/tiger-compiler yuexizou/tiger-compiler-env:new
+		-v $(shell pwd):/home/stu/tiger-compiler yuexizou/tiger-compiler-env:tiger
 
 build:
 	mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=Release .. && make
@@ -42,16 +42,16 @@ gradeall:
 	bash scripts/grade.sh all
 
 ziplab1:
-	zip -r lab1-answer.zip src/straightline/slp.*
+	zip -j lab1-answer.zip src/straightline/slp.*
 
 ziplab2:
-	zip lab2-answer.zip src/tiger/lex/tiger.lex src/tiger/lex/scanner.h
+	zip -j lab2-answer.zip src/tiger/lex/tiger.lex src/tiger/lex/scanner.h
 
 ziplab3:
-	zip lab3-answer.zip src/tiger/parse/tiger.y
+	zip -j lab3-answer.zip src/tiger/parse/tiger.y
 
 ziplab4:
-	zip lab4-answer.zip src/tiger/semant/semant.cc
+	zip -j lab4-answer.zip src/tiger/semant/semant.cc
 
 ziplab5-1:
 	zip -r lab5-1_answer.zip src/

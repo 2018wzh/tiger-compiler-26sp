@@ -27,7 +27,7 @@ We provide you a Docker image that has already installed all the dependencies. Y
 
 ```bash
 # Run this command in the root directory of the project
-docker run -it --privileged -p 2222:22 -v $(pwd):/home/stu/tiger-compiler yuexizou/tiger-compiler-env:new  # or make docker-run
+docker run -it --privileged -p 2222:22 -v $(pwd):/home/stu/tiger-compiler yuexizou/tiger-compiler-env:tiger  # or make docker-run
 ```
 
 ## Compiling and Debugging
@@ -39,10 +39,10 @@ There are five makeable targets in total, including `test_slp`, `test_lex`, `tes
 ```bash
 # Run container and directly attach to it
 docker run -it --privileged -p 2222:22 \
-    -v $(pwd):/home/stu/tiger-compiler yuexizou/tiger-compiler-env:new  # or `make docker-run`
+    -v $(pwd):/home/stu/tiger-compiler yuexizou/tiger-compiler-env:tiger  # or `make docker-run`
 # Or run container in the backend and attach to it later
 docker run -dt --privileged -p 2222:22 \
-    -v $(pwd):/home/stu/tiger-compiler yuexizou/tiger-compiler-env:new
+    -v $(pwd):/home/stu/tiger-compiler yuexizou/tiger-compiler-env:tiger
 docker attach ${YOUR_CONTAINER_ID}
 ```
 
