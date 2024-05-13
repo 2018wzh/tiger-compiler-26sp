@@ -1,2 +1,0 @@
-SimpleAssign
-args: 0
