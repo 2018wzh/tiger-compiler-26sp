@@ -36,6 +36,8 @@ file(GLOB TIGER_SOURCES
         "src/tiger/canon/*.cc"
         "src/tiger/codegen/*.cc"
         "src/tiger/output/*.cc"
+        "src/tiger/liveness/*.cc"
+        "src/tiger/regalloc/*.cc"
         )
 
 SET(TIGER_LEX_PARSE_SOURCES
@@ -91,3 +93,7 @@ add_dependencies(test_translate lex_parse_sources)
 # lab 5 part 2
 add_executable(test_codegen "src/tiger/main/test_codegen.cc" ${TIGER_SOURCES} ${TIGER_LEX_PARSE_SOURCES})
 add_dependencies(test_codegen lex_parse_sources)
+
+# lab 6
+add_executable(tiger-compiler "src/tiger/main/main.cc" ${TIGER_SOURCES} ${TIGER_LEX_PARSE_SOURCES})
+add_dependencies(tiger-compiler lex_parse_sources)
