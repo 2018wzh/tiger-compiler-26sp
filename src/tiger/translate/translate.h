@@ -16,6 +16,31 @@ class Exp;
 class ExpAndTy;
 class Level;
 
+class PatchList {
+public:
+  void DoPatch(temp::Label *label) {
+    for(auto &patch : patch_list_) *patch = label;
+  }
+
+  static PatchList JoinPatch(const PatchList &first, const PatchList &second) {
+    PatchList ret(first.GetList());
+    for(auto &patch : second.patch_list_) {
+      ret.patch_list_.push_back(patch);
+    }
+    return ret;
+  }
+
+  explicit PatchList(std::list<temp::Label **> patch_list) : patch_list_(patch_list) {}
+  PatchList() = default;
+
+  [[nodiscard]] const std::list<temp::Label **> &GetList() const {
+    return patch_list_;
+  }
+
+private:
+  std::list<temp::Label **> patch_list_;
+};
+
 class Access {
 public:
   Level *level_;
