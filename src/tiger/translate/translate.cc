@@ -24,11 +24,11 @@ Access *Access::AllocLocal(Level *level, bool escape) {
 
 class Cx {
 public:
-  temp::Label **trues_;
-  temp::Label **falses_;
+  PatchList trues_;
+  PatchList falses_;
   tree::Stm *stm_;
 
-  Cx(temp::Label **trues, temp::Label **falses, tree::Stm *stm)
+  Cx(PatchList trues, PatchList falses, tree::Stm *stm)
       : trues_(trues), falses_(falses), stm_(stm) {}
 };
 
@@ -91,7 +91,7 @@ class CxExp : public Exp {
 public:
   Cx cx_;
 
-  CxExp(temp::Label** trues, temp::Label** falses, tree::Stm *stm)
+  CxExp(PatchList trues, PatchList falses, tree::Stm *stm)
       : cx_(trues, falses, stm) {}
   
   [[nodiscard]] tree::Exp *UnEx() const override {
