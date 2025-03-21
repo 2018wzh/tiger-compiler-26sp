@@ -33,8 +33,7 @@
 %token
   COMMA COLON SEMICOLON LPAREN RPAREN LBRACK RBRACK
   LBRACE RBRACE DOT
-  PLUS MINUS TIMES DIVIDE EQ NEQ LT LE GT GE
-  AND OR ASSIGN
+  ASSIGN
   ARRAY IF THEN ELSE WHILE FOR TO DO LET IN END OF
   BREAK NIL
   FUNCTION VAR TYPE
@@ -42,7 +41,9 @@
  /* token priority */
  /* TODO: Put your lab3 code here */
 
-%type <exp> exp expseq
+
+
+%type <exp> exp expseq opexp ifexp whileexp callexp recordexp
 %type <explist> actuals nonemptyactuals sequencing sequencing_exps
 %type <var> lvalue one oneormore
 %type <declist> decs decs_nonempty
@@ -62,8 +63,4 @@
 %%
 program:  exp  {absyn_tree_ = std::make_unique<absyn::AbsynTree>($1);};
 
-lvalue:  ID  {$$ = new absyn::SimpleVar(scanner_.GetTokPos(), $1);}
-  |  oneormore  {$$ = $1;}
-  ;
-
- /* TODO: Put your lab3 code here */
+/* TODO: Put your lab3 code here */

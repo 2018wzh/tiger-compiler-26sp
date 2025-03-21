@@ -73,7 +73,8 @@ test_lab3() {
   for testcase in "$testcase_dir"/*.tig; do
     testcase_name=$(basename "$testcase" | cut -f1 -d".")
     local ref=${ref_dir}/${testcase_name}.out
-
+    sed -i 's/\r$//' "$testcase"
+    sed -i 's/\r$//' "${ref}"
     ./test_parse "$testcase" >&/tmp/output.txt
     res_run=$?
 
