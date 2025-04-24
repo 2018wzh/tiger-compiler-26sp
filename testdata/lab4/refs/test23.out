@@ -1,2 +1,4 @@
-./testdata/lab4/testcases/test23.tig:7.16:unmatched assign exp
-./testdata/lab4/testcases/test23.tig:9.1:unmatched assign exp
+./testdata/lab4/testcases/test23.tig:6.19: unmatched assign exp
+./testdata/lab4/testcases/test23.tig:7.18: unmatched assign exp
+./testdata/lab4/testcases/test23.tig:9.19: loop variable can't be assigned
+./testdata/lab4/testcases/test23.tig:11.5: unmatched assign exp
