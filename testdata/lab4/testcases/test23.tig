@@ -1,9 +1,12 @@
-/* error : type mismatch */
-
-let 
-	type rectype = {name:string , id:int}
-	var rec1 := rectype {name="aname", id=0}
+let
+    var x := 0
+    type rectype = {name: string, id: int}
+    var rec1 := rectype {name = "aname", id = 0}
 in
-	rec1.name := 3;
-	rec1.id := "" 
+    rec1.name := 3;    /* unmatched assign exp */
+    rec1.id := "";     /* unmatched assign exp */
+    for i := 1 to 5 do (
+        i := i + 1;    /* loop variable can't be assigned */
+        x := "hello"   /* unmatched assign exp */
+    )
 end
