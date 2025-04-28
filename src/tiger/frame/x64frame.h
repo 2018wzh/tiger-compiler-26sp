@@ -1,7 +1,3 @@
-//
-// Created by wzl on 2021/10/12.
-//
-
 #ifndef TIGER_COMPILER_X64FRAME_H
 #define TIGER_COMPILER_X64FRAME_H
 
@@ -52,7 +48,7 @@ public:
   [[nodiscard]] temp::Temp *StackPointer() override;
 
   [[nodiscard]] temp::Temp *ReturnValue() override;
-  /* End for lab5 code */
+  
 };
 
 } // namespace frame

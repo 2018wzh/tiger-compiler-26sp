@@ -150,7 +150,38 @@ tr::ExpAndTy *FieldVar::Translate(env::VEnvPtr venv, env::TEnvPtr tenv,
                                   tr::Level *level, temp::Label *label,
                                   err::ErrorMsg *errormsg) const {
   /* TODO: Put your lab5 code here */
+  tr::ExpAndTy *exp_ty =
+    var_->Translate(venv, tenv, level, label, errormsg);
+  tr::Exp *exp = exp_ty->exp_;
+  type::Ty *ty = exp_ty->ty_->ActualTy();
 
+  if (typeid(*ty) != typeid(type::RecordTy)) {
+    errormsg->Error(pos_, "not a record type");
+    return new tr::ExpAndTy(new tr::ExExp(new tree::ConstExp(0)),
+                            type::VoidTy::Instance());
+  }
+
+  if (typeid(*exp) != typeid(tr::ExExp)) {
+    errormsg->Error(pos_, "field var's exp must be an expression");
+    return new tr::ExpAndTy(new tr::ExExp(new tree::ConstExp(0)),
+                            type::VoidTy::Instance());
+  }
+  auto record_ty = static_cast<type::RecordTy *>(ty);
+  type::FieldList *field_list = record_ty->fields_;
+  int order = 0;
+  for (auto field : field_list->GetList()) {
+    if (field->name_ == sym_) {
+      tree::Exp *texp = new tree::MemExp(new tree::BinopExp(
+          tree::PLUS_OP, exp->UnEx(),
+          new tree::ConstExp(order * reg_manager->WordSize())));
+      return new tr::ExpAndTy(new tr::ExExp(texp), field->ty_->ActualTy());
+    }
+    order++;
+  }
+  errormsg->Error(pos_, "field %s doesn't exist", sym_->Name().data());
+  return new tr::ExpAndTy(nullptr, type::IntTy::Instance());
+
+  /*TODO end*/
 }
 
 tr::ExpAndTy *SubscriptVar::Translate(env::VEnvPtr venv, env::TEnvPtr tenv,
@@ -284,7 +315,34 @@ tr::Exp *VarDec::Translate(env::VEnvPtr venv, env::TEnvPtr tenv,
                            tr::Level *level, temp::Label *label,
                            err::ErrorMsg *errormsg) const {
   /* TODO: Put your lab5 code here */
+  tr::ExpAndTy *init_exp_ty =
+      init_->Translate(venv, tenv, level, label, errormsg);
+  type::Ty *init_ty = init_exp_ty->ty_;
 
+  if (typ_) {
+    type::Ty *ty = tenv->Look(typ_);
+    if (!ty) {
+      errormsg->Error(pos_, "undefined type %s", typ_->Name().data());
+    }
+
+    if (!ty->IsSameType(init_ty)) {
+      errormsg->Error(pos_, "type and init type mismatch");
+    }
+  } else {
+    auto actual_init_ty = init_ty->ActualTy();
+    if (typeid(*actual_init_ty) == typeid(type::NilTy)) {
+      errormsg->Error(pos_, "init should not be nil without type specified");
+    }
+  }
+
+  tr::Access *access = tr::Access::AllocLocal(level, escape_);
+  venv->Enter(var_, new env::VarEntry(access, init_ty));
+
+  return new tr::NxExp(
+      new tree::MoveStm(access->access_->ToExp(new tree::TempExp(
+                            reg_manager->FramePointer())),
+                        init_exp_ty->exp_->UnEx()));
+  /*TODO end*/
 }
 
 tr::Exp *TypeDec::Translate(env::VEnvPtr venv, env::TEnvPtr tenv,
