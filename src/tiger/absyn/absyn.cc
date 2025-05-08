@@ -13,7 +13,7 @@ inline void PrintOper(FILE *out, absyn::Oper d) {
       "AND",   "OR",       "PLUS",     "MINUS",  "TIMES",  "DIVIDE",
       "EQUAL", "NOTEQUAL", "LESSTHAN", "LESSEQ", "GREAT",  "GREATEQ"};
   fprintf(out, "%s", str_oper[d].data());
-}field
+}
 
 } // namespace
 
