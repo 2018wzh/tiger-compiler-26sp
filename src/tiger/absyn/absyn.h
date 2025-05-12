@@ -35,6 +35,8 @@ class DecList;
 class EFieldList;
 
 enum Oper {
+  AND_OP,
+  OR_OP,
   PLUS_OP,
   MINUS_OP,
   TIMES_OP,
@@ -47,7 +49,6 @@ enum Oper {
   GE_OP,
   ABSYN_OPER_COUNT,
 };
-
 /**
  * Abstract syntax tree root
  */
