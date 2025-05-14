@@ -148,7 +148,7 @@ class Debugger(Interpreter):
         self._get_temp_regsiters()
         self._get_machine_registers()
     
-    def show_temp_registers(self):
+    def show_temper_registers(self):
         print("Show Temp registers")
         print("name\t\tvalue")
         self._get_temp_regsiters()
