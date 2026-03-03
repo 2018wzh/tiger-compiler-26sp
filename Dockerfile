@@ -1,9 +1,9 @@
-FROM ubuntu:18.04
+FROM ubuntu:22.04
 
 # Use aliyun registry
 RUN sed -i s@/archive.ubuntu.com/@/mirrors.aliyun.com/@g /etc/apt/sources.list
 RUN apt clean
-RUN apt update && apt install -y sudo git cmake g++ gcc vim tar gdb flexc++ bisonc++ openssh-server rsync python3.8 python3-pip dos2unix clang-format-10
+RUN apt update && apt install -y sudo git cmake g++ gcc vim tar gdb flexc++ bisonc++ openssh-server rsync python3.10 python3-pip dos2unix clang-format-14 zip
 RUN useradd -ms /bin/bash -G sudo stu
 RUN passwd -d stu
 RUN ln -sf /usr/bin/clang-format-10 /usr/bin/clang-format
