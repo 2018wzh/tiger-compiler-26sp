@@ -33,3 +33,5 @@ _deps
 .DS_Store
 *.log
 
+.cache
+*.zip
