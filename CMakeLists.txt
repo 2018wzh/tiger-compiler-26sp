@@ -72,7 +72,9 @@ file(GLOB SLP_SOURCES "src/straightline/*.cc")
 # )
 
 # lab 1
-add_executable(test_slp ${SLP_SOURCES})
+file(GLOB SLP_LIB_SOURCES "src/straightline/slp.cc" "src/straightline/prog.cc")
+add_executable(test_slp "src/straightline/test_slp.cc" ${SLP_LIB_SOURCES})
+add_executable(test_full "src/straightline/test_full.cc" ${SLP_LIB_SOURCES})
 
 # lab 2
 # add_executable(test_lex "src/tiger/main/test_lex.cc" ${TIGER_SOURCES} ${TIGER_LEX_PARSE_SOURCES})
