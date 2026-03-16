@@ -51,11 +51,11 @@ private:
   void print();
   void exceptionHandler(std::exception const &exc);
 
-  void executeAction__(int ruleNr);
-  void errorRecovery__();
-  void nextCycle__();
-  void nextToken__();
-  void print__();
+  void executeAction_(int ruleNr);
+  void errorRecovery_();
+  void nextCycle_();
+  void nextToken_();
+  void print_();
 };
 
 inline void Parser::error() {
@@ -67,14 +67,14 @@ inline int Parser::lex() {
   int token = scanner_.lex();
   switch (token) {
   case Parser::ID:
-    d_val__.sym = sym::Symbol::UniqueSymbol(scanner_.matched());
+    d_val_.sym = sym::Symbol::UniqueSymbol(scanner_.matched());
     break;
   case Parser::STRING:
     string_pool_.push_back(scanner_.matched());
-    d_val__.sval = &string_pool_.back();
+    d_val_.sval = &string_pool_.back();
     break;
   case Parser::INT:
-    d_val__.ival = std::stoi(scanner_.matched());
+    d_val_.ival = std::stoi(scanner_.matched());
     break;
   default:
     break;
@@ -82,7 +82,7 @@ inline int Parser::lex() {
   return token;
 }
 
-inline void Parser::print() { print__(); }
+inline void Parser::print() { print_(); }
 
 inline void Parser::exceptionHandler(std::exception const &exc) { throw; }
 
