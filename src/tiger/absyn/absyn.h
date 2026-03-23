@@ -50,7 +50,7 @@ enum Oper {
 class AbsynTree {
 public:
   AbsynTree() = delete;
-  AbsynTree(nullptr_t) = delete;
+  AbsynTree(std::nullptr_t) = delete;
   explicit AbsynTree(absyn::Exp *root);
   AbsynTree(const AbsynTree &absyn_tree) = delete;
   AbsynTree(AbsynTree &&absyn_tree) = delete;
@@ -59,6 +59,7 @@ public:
   ~AbsynTree();
 
   void Print(FILE *out) const;
+
 private:
   absyn::Exp *root_;
 };
@@ -72,6 +73,7 @@ public:
   int pos_;
   virtual ~Var() = default;
   virtual void Print(FILE *out, int d) const = 0;
+
 protected:
   explicit Var(int pos) : pos_(pos) {}
 };
@@ -118,6 +120,7 @@ public:
   int pos_;
   virtual ~Exp() = default;
   virtual void Print(FILE *out, int d) const = 0;
+
 protected:
   explicit Exp(int pos) : pos_(pos) {}
 };
@@ -303,6 +306,7 @@ public:
   int pos_;
   virtual ~Dec() = default;
   virtual void Print(FILE *out, int d) const = 0;
+
 protected:
   explicit Dec(int pos) : pos_(pos) {}
 };
@@ -351,6 +355,7 @@ public:
   int pos_;
   virtual ~Ty() = default;
   virtual void Print(FILE *out, int d) const = 0;
+
 protected:
   explicit Ty(int pos) : pos_(pos) {}
 };

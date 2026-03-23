@@ -108,7 +108,7 @@ letter [a-zA-Z]
   "\\t" { adjustStr(); string_buf_ += '\t'; }
   "\\\"" { adjustStr(); string_buf_ += '"'; }
   "\\\\" { adjustStr(); string_buf_ += '\\'; }
-  \\[0-9]{3} {
+  \\[0-9][0-9][0-9] {
     adjustStr();
     std::string s = matched();
     int val = (s[1]-'0')*100 + (s[2]-'0')*10 + (s[3]-'0');
