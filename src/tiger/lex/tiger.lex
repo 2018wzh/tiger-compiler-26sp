@@ -86,70 +86,60 @@ letter [a-zA-Z]
 
 {letter}({letter}|{digit}|[_])* {adjust(); return Parser::ID;}
 
-"/*" {adjust(); begin(COMMENT); comment_level_ = 1;}
+"/*" {adjust(); begin(StartCondition_::COMMENT); comment_level_ = 1;}
 
 <COMMENT>{
-  "/*" { comment_level_++; }
-  "*/" { if (--comment_level_ == 0) begin(INITIAL); }
+  "/*" { adjust(); comment_level_++; }
+  "*/" { adjust(); if (--comment_level_ == 0) begin(StartCondition_::INITIAL); }
   "\n" { adjust(); errormsg_->Newline(); }
   .    { adjust(); }
 }
 
-/* string literal: switch to STR or process directly */
-"\""([^\\\"]|\\.)*"\"" {
-  std::string s = matched();
-  if (s.size() >= 2) s = s.substr(1, s.size() - 2); /* remove surrounding quotes */
-  std::string out;
-  out.reserve(s.size());
-  auto isFormatting = [](char c) {
-    return c == ' ' || c == '\t' || c == '\n' || c == '\f';
-  };
-  size_t i = 0;
-  while (i < s.size()) {
-    if (s[i] != '\\') { out.push_back(s[i]); ++i; continue; }
-    /* s[i] == '\\' */
-    if (i + 1 >= s.size()) { ++i; break; }
-    char c = s[i+1];
-    /* Simple escapes */
-    if (c == 'n') { out.push_back('\n'); i += 2; continue; }
-    if (c == 't') { out.push_back('\t'); i += 2; continue; }
-    if (c == '\\') { out.push_back('\\'); i += 2; continue; }
-    if (c == '"') { out.push_back('"'); i += 2; continue; }
+"\"" { adjust(); string_buf_.clear(); begin(StartCondition_::STR); }
 
-    /* control: \^c */
-    if (c == '^' && i + 2 < s.size()) {
-      char cc = s[i+2];
-      char ctrl = static_cast<char>(cc & 0x1F);
-      out.push_back(ctrl);
-      i += 3;
-      continue;
-    }
-
-    /* \ddd decimal ASCII (three digits) */
-    if (c >= '0' && c <= '9' && i + 3 < s.size() && isdigit(static_cast<unsigned char>(s[i+2])) && isdigit(static_cast<unsigned char>(s[i+3]))) {
-      int code = (s[i+1]-'0')*100 + (s[i+2]-'0')*10 + (s[i+3]-'0');
-      out.push_back(static_cast<char>(code));
-      i += 4;
-      continue;
-    }
-
-    /* \f___f\  -> ignored */
-    if (isFormatting(c)) {
-      size_t j = i + 1;
-      while (j < s.size() && isFormatting(s[j])) ++j;
-      if (j < s.size() && s[j] == '\\') {
-        i = j + 1;
-        continue;
-      }
-    }
-    /* any other condition is not allowed */
-    errormsg_->Error(errormsg_->tok_pos_, "illegal token");
+<STR>{
+  "\"" {
+    adjustStr();
+    begin(StartCondition_::INITIAL);
+    setMatched(string_buf_);
+    return Parser::STRING;
   }
-  setMatched(out);
-  adjustStr();
-  return Parser::STRING;
+  "\\n" { adjustStr(); string_buf_ += '\n'; }
+  "\\t" { adjustStr(); string_buf_ += '\t'; }
+  "\\\"" { adjustStr(); string_buf_ += '"'; }
+  "\\\\" { adjustStr(); string_buf_ += '\\'; }
+  \\[0-9]{3} {
+    adjustStr();
+    std::string s = matched();
+    int val = (s[1]-'0')*100 + (s[2]-'0')*10 + (s[3]-'0');
+    string_buf_ += static_cast<char>(val);
+  }
+  "\\^"[a-zA-Z\[\\\]\^_@] {
+    adjustStr();
+    std::string s = matched();
+    char c = s[2];
+    if (c >= 'a' && c <= 'z') c = c - 'a' + 'A';
+    string_buf_ += static_cast<char>(c - '@');
+  }
+  \\[ \t\n\f]+\\ {
+    adjustStr();
+    std::string s = matched();
+    for (char c : s) {
+      if (c == '\n') errormsg_->Newline();
+    }
+  }
+  \n {
+    adjustStr();
+    errormsg_->Newline();
+    string_buf_ += '\n';
+  }
+  . {
+    adjustStr();
+    string_buf_ += matched();
+  }
 }
-[-]?{digit}+ {adjust(); return Parser::INT;}
+
+{digit}+ {adjust(); return Parser::INT;}
 
 "," {adjust(); return Parser::COMMA;}
 ":" {adjust(); return Parser::COLON;}
