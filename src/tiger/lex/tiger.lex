@@ -112,6 +112,10 @@ letter [a-zA-Z]
     adjustStr();
     std::string s = matched();
     int val = (s[1]-'0')*100 + (s[2]-'0')*10 + (s[3]-'0');
+    if (val > 127) {
+      errormsg_->Error(errormsg_->tok_pos_, "octal escape sequence out of range");
+      val = 127;
+    }
     string_buf_ += static_cast<char>(val);
   }
   "\\^"[a-zA-Z\[\\\]\^_@] {
@@ -164,6 +168,23 @@ letter [a-zA-Z]
 "&" {adjust(); return Parser::AND;}
 "|" {adjust(); return Parser::OR;}
 ":=" {adjust(); return Parser::ASSIGN;}
+
+<COMMENT><<EOF>> {
+  errormsg_->Error(errormsg_->tok_pos_, "unterminated comment");
+  begin(StartCondition_::INITIAL);
+}
+
+<STR><<EOF>> {
+  errormsg_->Error(errormsg_->tok_pos_, "unterminated string");
+  setMatched(string_buf_);
+  begin(StartCondition_::INITIAL);
+  return Parser::STRING;
+}
+
+<<EOF>> {
+  return 0;
+}
+
  /*
   * skip white space chars.
   * space, tabs and LF
