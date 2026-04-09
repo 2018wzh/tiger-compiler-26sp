@@ -1,4 +1,4 @@
-%filenames = "scanner"
+%filenames scanner
 
  /*
   * Please don't modify the lines above.
@@ -66,6 +66,112 @@ letter [a-zA-Z]
 "array" {adjust(); return Parser::ARRAY;}
 
  /* TODO: Put your lab2 code here */
+
+"if" {adjust(); return Parser::IF;}
+"then" {adjust(); return Parser::THEN;}
+"else" {adjust(); return Parser::ELSE;}
+"while" {adjust(); return Parser::WHILE;}
+"for" {adjust(); return Parser::FOR;}
+"to" {adjust(); return Parser::TO;}
+"do" {adjust(); return Parser::DO;}
+"let" {adjust(); return Parser::LET;}
+"in" {adjust(); return Parser::IN;}
+"end" {adjust(); return Parser::END;}
+"of" {adjust(); return Parser::OF;}
+"break" {adjust(); return Parser::BREAK;}
+"nil" {adjust(); return Parser::NIL;}
+"function" {adjust(); return Parser::FUNCTION;}
+"var" {adjust(); return Parser::VAR;}
+"type" {adjust(); return Parser::TYPE;}
+
+{letter}({letter}|{digit}|[_])* {adjust(); return Parser::ID;}
+
+"/*" {adjust(); begin(StartCondition_::COMMENT); comment_level_ = 1;}
+
+<COMMENT>{
+  "/*" { adjust(); comment_level_++; }
+  "*/" { adjust(); if (--comment_level_ == 0) begin(StartCondition_::INITIAL); }
+  "\n" { adjust(); errormsg_->Newline(); }
+  .    { adjust(); }
+}
+
+"\"" { adjust(); string_buf_.clear(); begin(StartCondition_::STR); }
+
+<STR>{
+  "\"" {
+    adjustStr();
+    begin(StartCondition_::INITIAL);
+    setMatched(string_buf_);
+    return Parser::STRING;
+  }
+  "\\n" { adjustStr(); string_buf_ += '\n'; }
+  "\\t" { adjustStr(); string_buf_ += '\t'; }
+  "\\\"" { adjustStr(); string_buf_ += '"'; }
+  "\\\\" { adjustStr(); string_buf_ += '\\'; }
+  \\[0-9][0-9][0-9] {
+    adjustStr();
+    std::string s = matched();
+    int val = (s[1]-'0')*100 + (s[2]-'0')*10 + (s[3]-'0');
+    if (val > 127) {
+      errormsg_->Error(errormsg_->tok_pos_, "octal escape sequence out of range");
+      val = 127;
+    }
+    string_buf_ += static_cast<char>(val);
+  }
+  "\\^"[a-zA-Z\[\\\]\^_@] {
+    adjustStr();
+    std::string s = matched();
+    char c = s[2];
+    if (c >= 'a' && c <= 'z') c = c - 'a' + 'A';
+    string_buf_ += static_cast<char>(c - '@');
+  }
+  \\[ \t\n\f]+\\ {
+    adjustStr();
+    std::string s = matched();
+    for (char c : s) {
+      if (c == '\n') errormsg_->Newline();
+    }
+  }
+  \n {
+    adjustStr();
+    errormsg_->Newline();
+    string_buf_ += '\n';
+  }
+  . {
+    adjustStr();
+    string_buf_ += matched();
+  }
+}
+
+{digit}+ {adjust(); return Parser::INT;}
+
+"," {adjust(); return Parser::COMMA;}
+":" {adjust(); return Parser::COLON;}
+";" {adjust(); return Parser::SEMICOLON;}
+"(" {adjust(); return Parser::LPAREN;}
+")" {adjust(); return Parser::RPAREN;}
+"[" {adjust(); return Parser::LBRACK;}
+"]" {adjust(); return Parser::RBRACK;}
+"{" {adjust(); return Parser::LBRACE;}
+"}" {adjust(); return Parser::RBRACE;}
+"." {adjust(); return Parser::DOT;}
+":=" {adjust(); return Parser::ASSIGN;}
+
+<COMMENT><<EOF>> {
+  errormsg_->Error(errormsg_->tok_pos_, "unterminated comment");
+  begin(StartCondition_::INITIAL);
+}
+
+<STR><<EOF>> {
+  errormsg_->Error(errormsg_->tok_pos_, "unterminated string");
+  setMatched(string_buf_);
+  begin(StartCondition_::INITIAL);
+  return Parser::STRING;
+}
+
+<<EOF>> {
+  return 0;
+}
 
  /*
   * skip white space chars.
