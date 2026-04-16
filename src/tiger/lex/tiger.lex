@@ -8,7 +8,7 @@
 digit [0-9]
 letter [a-zA-Z]
 
-%x COMMENT STR IGNORE
+%x COMMENT STR
 
 %%
 
@@ -66,6 +66,19 @@ letter [a-zA-Z]
 "array" {adjust(); return Parser::ARRAY;}
 
  /* TODO: Put your lab2 code here */
+
+"+" {adjust(); return Parser::PLUS;}
+"-" {adjust(); return Parser::MINUS;}
+"*" {adjust(); return Parser::TIMES;}
+"/" {adjust(); return Parser::DIVIDE;}
+"=" {adjust(); return Parser::EQ;}
+"<>" {adjust(); return Parser::NEQ;}
+"<=" {adjust(); return Parser::LE;}
+"<" {adjust(); return Parser::LT;}
+">=" {adjust(); return Parser::GE;}
+">" {adjust(); return Parser::GT;}
+"&" {adjust(); return Parser::AND;}
+"|" {adjust(); return Parser::OR;}
 
 "if" {adjust(); return Parser::IF;}
 "then" {adjust(); return Parser::THEN;}
