@@ -55,27 +55,27 @@ private:
    * NOTE: do not change all the funtion signature below, which is used by
    * flexc++ internally
    */
-  int lex__();
-  int executeAction__(size_t ruleNr);
+  int lex();
+  int executeAction_(size_t ruleNr);
 
   void print();
   void preCode();
-  void postCode(PostEnum__ type);
+  void postCode(PostEnum_ type);
   void adjust();
   void adjustStr();
 };
 
-inline int Scanner::lex() { return lex__(); }
+inline int Scanner::lex() { return lex_(); }
 
 inline void Scanner::preCode() {
   // Optionally replace by your own code
 }
 
-inline void Scanner::postCode(PostEnum__ type) {
+inline void Scanner::postCode(PostEnum_ type) {
   // Optionally replace by your own code
 }
 
-inline void Scanner::print() { print__(); }
+inline void Scanner::print() { print_(); }
 
 inline void Scanner::adjust() {
   errormsg_->tok_pos_ = char_pos_;
