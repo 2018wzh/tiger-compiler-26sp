@@ -55,7 +55,7 @@ private:
    * NOTE: do not change all the funtion signature below, which is used by
    * flexc++ internally
    */
-  int lex();
+  int lex_();
   int executeAction_(size_t ruleNr);
 
   void print();
