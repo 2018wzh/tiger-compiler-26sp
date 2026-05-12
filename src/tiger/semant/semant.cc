@@ -124,22 +124,37 @@ type::Ty *CallExp::SemAnalyze(env::VEnvPtr venv, env::TEnvPtr tenv,
   auto formal_it = formals.begin();
   auto actual_it = actuals.begin();
   bool mismatch = false;
+  bool arg_had_error = false;
   for (; formal_it != formals.end() && actual_it != actuals.end();
        ++formal_it, ++actual_it) {
+    bool arg_error_before = errormsg->AnyErrors();
     type::Ty *actual_ty =
         (*actual_it)->SemAnalyze(venv, tenv, labelcount, errormsg);
-    if (!(*formal_it)->IsSameType(actual_ty))
+    if (errormsg->AnyErrors() != arg_error_before) {
+      arg_had_error = true;
+    }
+    if (!arg_had_error && !(*formal_it)->IsSameType(actual_ty)) {
       mismatch = true;
+    }
   }
-  if (mismatch)
+  if (mismatch && !arg_had_error) {
     errormsg->Error(this->pos_, "para type mismatch");
+  }
   return func_entry->result_;
 }
 
 type::Ty *OpExp::SemAnalyze(env::VEnvPtr venv, env::TEnvPtr tenv,
                             int labelcount, err::ErrorMsg *errormsg) const {
-  type::Ty *left_ty = left_->SemAnalyze(venv, tenv, labelcount, errormsg);
-  type::Ty *right_ty = right_->SemAnalyze(venv, tenv, labelcount, errormsg);
+  bool left_error_before = errormsg->AnyErrors();
+  type::Ty *left_ty = this->left_->SemAnalyze(venv, tenv, labelcount, errormsg);
+  bool left_had_error = errormsg->AnyErrors() && !left_error_before;
+  bool right_error_before = errormsg->AnyErrors();
+  type::Ty *right_ty =
+      this->right_->SemAnalyze(venv, tenv, labelcount, errormsg);
+  bool right_had_error = errormsg->AnyErrors() && !right_error_before;
+  if (left_had_error || right_had_error) {
+    return type::VoidTy::Instance();
+  }
   switch (this->oper_) {
     // integer operations: +, -, *, /
   case PLUS_OP:
@@ -225,9 +240,11 @@ type::Ty *RecordExp::SemAnalyze(env::VEnvPtr venv, env::TEnvPtr tenv,
       break;
     }
 
+    bool field_error_before = errormsg->AnyErrors();
     type::Ty *actual_ty =
         (*actual_it)->exp_->SemAnalyze(venv, tenv, labelcount, errormsg);
-    if (!(*def_it)->ty_->IsSameType(actual_ty)) {
+    bool field_had_error = errormsg->AnyErrors() && !field_error_before;
+    if (!field_had_error && !(*def_it)->ty_->IsSameType(actual_ty)) {
       errormsg->Error((*actual_it)->exp_->pos_, "same type required");
       break;
     }
@@ -251,9 +268,12 @@ type::Ty *SeqExp::SemAnalyze(env::VEnvPtr venv, env::TEnvPtr tenv,
 
 type::Ty *IfExp::SemAnalyze(env::VEnvPtr venv, env::TEnvPtr tenv,
                             int labelcount, err::ErrorMsg *errormsg) const {
-  type::Ty *test_ty = this->test_->SemAnalyze(venv, tenv, labelcount, errormsg);
+  bool test_error_before = errormsg->AnyErrors();
+  type::Ty *test_ty =
+      this->test_->SemAnalyze(venv, tenv, labelcount, errormsg);
+  bool test_had_error = errormsg->AnyErrors() && !test_error_before;
   // test expression should be an integer (0 is false, non-zero is true)
-  if (!test_ty->IsSameType(type::IntTy::Instance())) {
+  if (!test_had_error && !test_ty->IsSameType(type::IntTy::Instance())) {
     errormsg->Error(this->test_->pos_, "integer required");
   }
   // get the type of then and else expressions, and check if they match
@@ -272,6 +292,9 @@ type::Ty *IfExp::SemAnalyze(env::VEnvPtr venv, env::TEnvPtr tenv,
   bool else_error_before = errormsg->AnyErrors();
   type::Ty *else_ty = this->elsee_->SemAnalyze(venv, tenv, labelcount, errormsg);
   bool else_had_error = errormsg->AnyErrors() && !else_error_before;
+  if (test_had_error) {
+    return type::VoidTy::Instance();
+  }
   if (!then_had_error && !else_had_error && !then_ty->IsSameType(else_ty)) {
     errormsg->Error(this->pos_, "then exp and else exp type mismatch");
     return type::VoidTy::Instance();
@@ -290,8 +313,11 @@ type::Ty *IfExp::SemAnalyze(env::VEnvPtr venv, env::TEnvPtr tenv,
 
 type::Ty *WhileExp::SemAnalyze(env::VEnvPtr venv, env::TEnvPtr tenv,
                                int labelcount, err::ErrorMsg *errormsg) const {
-  type::Ty *test_ty = this->test_->SemAnalyze(venv, tenv, labelcount, errormsg);
-  if (!test_ty->IsSameType(type::IntTy::Instance())) {
+  bool test_error_before = errormsg->AnyErrors();
+  type::Ty *test_ty =
+      this->test_->SemAnalyze(venv, tenv, labelcount, errormsg);
+  bool test_had_error = errormsg->AnyErrors() && !test_error_before;
+  if (!test_had_error && !test_ty->IsSameType(type::IntTy::Instance())) {
     errormsg->Error(this->test_->pos_, "integer required");
   }
   // get error status before analyzing body expression, so that we can avoid
@@ -350,8 +376,10 @@ type::Ty *ArrayExp::SemAnalyze(env::VEnvPtr venv, env::TEnvPtr tenv,
     return type::VoidTy::Instance();
   }
 
+  bool size_error_before = errormsg->AnyErrors();
   type::Ty *size_ty = this->size_->SemAnalyze(venv, tenv, labelcount, errormsg);
-  if (!size_ty->IsSameType(type::IntTy::Instance())) {
+  bool size_had_error = errormsg->AnyErrors() && !size_error_before;
+  if (!size_had_error && !size_ty->IsSameType(type::IntTy::Instance())) {
     errormsg->Error(this->size_->pos_, "integer required");
   }
 
@@ -451,10 +479,12 @@ void FunctionDec::SemAnalyze(env::VEnvPtr venv, env::TEnvPtr tenv,
       ++formal_it;
     }
 
+    bool body_error_before = errormsg->AnyErrors();
     type::Ty *body_ty =
         item.fun_dec->body_
             ? item.fun_dec->body_->SemAnalyze(venv, tenv, labelcount, errormsg)
             : type::VoidTy::Instance();
+    bool body_had_error = errormsg->AnyErrors() && !body_error_before;
     venv->EndScope();
 
     if (item.result == type::VoidTy::Instance()) {
@@ -573,10 +603,15 @@ type::Ty *ArrayTy::SemAnalyze(env::TEnvPtr tenv,
 
 type::Ty *ForExp::SemAnalyze(env::VEnvPtr venv, env::TEnvPtr tenv,
                              int labelcount, err::ErrorMsg *errormsg) const {
+  bool low_error_before = errormsg->AnyErrors();
   type::Ty *low_ty = this->lo_->SemAnalyze(venv, tenv, labelcount, errormsg);
+  bool low_had_error = errormsg->AnyErrors() && !low_error_before;
+  bool high_error_before = errormsg->AnyErrors();
   type::Ty *high_ty = this->hi_->SemAnalyze(venv, tenv, labelcount, errormsg);
-  if (!low_ty->IsSameType(type::IntTy::Instance()) ||
-      !high_ty->IsSameType(type::IntTy::Instance())) {
+  bool high_had_error = errormsg->AnyErrors() && !high_error_before;
+  if (!low_had_error && !high_had_error &&
+      (!low_ty->IsSameType(type::IntTy::Instance()) ||
+       !high_ty->IsSameType(type::IntTy::Instance()))) {
     errormsg->Error(this->hi_->pos_, "for exp's range type is not integer");
   }
   // We treat the loop variable as a read-only variable, so that we can catch
