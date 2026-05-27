@@ -48,7 +48,6 @@ public:
   [[nodiscard]] temp::Temp *StackPointer() override;
 
   [[nodiscard]] temp::Temp *ReturnValue() override;
-  
 };
 
 } // namespace frame

@@ -62,22 +62,34 @@ public:
   [[nodiscard]] virtual temp::Temp *ReturnValue() = 0;
 
   temp::Map *temp_map_;
+
 protected:
   std::vector<temp::Temp *> regs_;
 };
 
 class Access {
 public:
-  /* TODO: Put your lab5 code here */
-
-  
+  virtual tree::Exp *ToExp(tree::Exp *framePtr) const = 0;
   virtual ~Access() = default;
-  
 };
 
 class Frame {
-  /* TODO: Put your lab5 code here */
-
+public:
+  Frame(int word_size, int local_count, temp::Label *name,
+        std::list<Access *> *formals)
+      : word_size_(word_size), local_count_(local_count), name_(name),
+        formals_(formals) {}
+  ~Frame() = default;
+  virtual std::string GetLabel() const = 0;
+  virtual temp::Label *Name() const = 0;
+  virtual std::list<Access *> *Formals() const = 0;
+  virtual Access *AllocLocal(bool escape) = 0;
+  virtual void AllocOutgoSpace(int size) = 0;
+  virtual void SetViewShift(tree::Stm *stm) {}
+  int word_size_;
+  int local_count_;
+  temp::Label *name_;
+  std::list<Access *> *formals_;
 };
 
 /**
@@ -110,16 +122,15 @@ class Frags {
 public:
   Frags() = default;
   void PushBack(Frag *frag) { frags_.push_back(frag); }
-  const std::list<Frag*> &GetList() { return frags_; }
+  const std::list<Frag *> &GetList() { return frags_; }
 
 private:
-  std::list<Frag*> frags_;
+  std::list<Frag *> frags_;
 };
 
-/* TODO: Put your lab5 code here */
-
-/* End for lab5 code */
-
+frame::Frame *NewFrame(temp::Label *name, std::list<bool> formals);
+tree::Exp *ExternalCall(std::string_view s, tree::ExpList *args);
+tree::Stm *ProcEntryExit1(frame::Frame *frame, tree::Stm *stm);
 } // namespace frame
 
 #endif

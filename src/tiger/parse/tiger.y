@@ -40,14 +40,14 @@
  /* token priority */
  /* TODO: Put your lab3 code here */
 %right ASSIGN // :=
+%nonassoc THEN // if-then-else
+%nonassoc ELSE // if-then-else
 %left OR // |
 %left AND // &
 %nonassoc EQ NEQ LT LE GT GE // = <> < <= > >=
 %left PLUS MINUS // + -
 %left TIMES DIVIDE // * /
 %left UMINUS // - (unary)
-%nonassoc THEN // if-then-else
-%nonassoc ELSE // if-then-else
 %expect 2
 
 %type <exp> exp expseq opexp ifexp whileexp callexp recordexp

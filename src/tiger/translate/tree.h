@@ -6,6 +6,7 @@
 #include <cstdio>
 #include <list>
 #include <string>
+#include <vector>
 
 #include "tiger/frame/temp.h"
 

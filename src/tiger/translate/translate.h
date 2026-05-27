@@ -69,8 +69,8 @@ public:
 
   static Level *NewLevel(Level *parent, temp::Label *name,
                          std::list<bool> formals) {
-    // Create new frame and manage static link by insert a TRUE into boollist
-    formals.push_back(true);
+    // Static link is stored as the first formal parameter.
+    formals.push_front(true);
     return new Level(frame::NewFrame(name, formals), parent);
   }
 };

@@ -76,28 +76,23 @@ public:
   int offset;
 
   explicit InFrameAccess(int offset) : offset(offset) {}
-  /* TODO: Put your lab5 code here */
   tree::Exp *ToExp(tree::Exp *frame_ptr) const override {
-
+    return new tree::MemExp(new tree::BinopExp(tree::PLUS_OP, frame_ptr,
+                                               new tree::ConstExp(offset)));
   }
-  /* End for lab5 code */
 };
-
 
 class InRegAccess : public Access {
 public:
   temp::Temp *reg;
 
   explicit InRegAccess(temp::Temp *reg) : reg(reg) {}
-  /* TODO: Put your lab5 code here */
   tree::Exp *ToExp(tree::Exp *framePtr) const override {
-  
+    return new tree::TempExp(reg);
   }
-  /* End for lab5 code */
 };
 
 class X64Frame : public Frame {
-  /* TODO: Put your lab5 code here */
 public:
   tree::Stm *view_shift;
 
@@ -110,16 +105,33 @@ public:
     return formals_;
   }
   frame::Access *AllocLocal(bool escape) override {
-    /* TODO: Put your lab5 code here */
+    if (escape) {
+      local_count_++;
+      return new InFrameAccess(-local_count_ * word_size_);
+    } else {
+      return new InRegAccess(temp::TempFactory::NewTemp());
+    }
   }
   void AllocOutgoSpace(int size) override {
-    /* TODO: Put your lab5 code here */
+    // Outgo space is used to store arguments when calling other functions. We
+    // allocate outgo space on the caller frame, so callee frame does not need
+    // to allocate outgo space.
+    return;
   }
+  void SetViewShift(tree::Stm *stm) override { view_shift = stm; }
   /* End for lab5 code */
 };
 
 frame::Frame *NewFrame(temp::Label *name, std::list<bool> formals) {
-  /* TODO: Put your lab5 code here */
+  std::list<frame::Access *> *access_list = new std::list<frame::Access *>();
+  for (bool escape : formals) {
+    if (escape) {
+      access_list->push_back(new InFrameAccess(-access_list->size() * 8 - 16));
+    } else {
+      access_list->push_back(new InRegAccess(temp::TempFactory::NewTemp()));
+    }
+  }
+  return new X64Frame(name, access_list);
 }
 
 tree::Exp *ExternalCall(std::string_view s, tree::ExpList *args) {
