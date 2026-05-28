@@ -13,6 +13,10 @@
 extern frame::Frags *frags;
 extern frame::RegManager *reg_manager;
 
+namespace {
+frame::ProcFrag *ProcEntryExit(tr::Level *level, tr::Exp *body);
+}
+
 namespace tr {
 
 Access *Access::AllocLocal(Level *level, bool escape) {
@@ -170,19 +174,29 @@ void ProgTr::Translate() {
       this->venv_.get(), this->tenv_.get(), this->main_level_.get(), nullptr,
       this->errormsg_.get());
   if (root_exp_ty) {
-    tree::Stm *body_stm =
-        dynamic_cast<type::VoidTy *>(root_exp_ty->ty_)
-            ? root_exp_ty->exp_->UnNx()
-            : new tree::MoveStm(new tree::TempExp(reg_manager->ReturnValue()),
-                                root_exp_ty->exp_->UnEx());
-    frags->PushBack(new frame::ProcFrag(
-        frame::ProcEntryExit1(this->main_level_->frame_, body_stm),
-        this->main_level_->frame_));
+    frags->PushBack(ProcEntryExit(this->main_level_.get(), root_exp_ty->exp_));
   }
 }
 
 } // namespace tr
 
+namespace {
+
+/**
+ * Wrapper for `ProcEntryExit1`, which deals with the return value of the
+ * function body
+ * @param level current level
+ * @param body function body
+ * @return procedure fragment after `ProcEntryExit1`
+ */
+frame::ProcFrag *ProcEntryExit(tr::Level *level, tr::Exp *body) {
+  tree::Stm *body_stm =
+      new tree::MoveStm(new tree::TempExp(reg_manager->ReturnValue()),
+                        body->UnEx());
+  return new frame::ProcFrag(frame::ProcEntryExit1(level->frame_, body_stm),
+                             level->frame_);
+}
+} // namespace
 namespace absyn {
 
 tr::ExpAndTy *AbsynTree::Translate(env::VEnvPtr venv, env::TEnvPtr tenv,
@@ -976,14 +990,7 @@ tr::Exp *FunctionDec::Translate(env::VEnvPtr venv, env::TEnvPtr tenv,
                   new tr::NxExp(new tree::ExpStm(new tree::ConstExp(0))),
                   type::VoidTy::Instance());
     venv->EndScope();
-    tree::Stm *body_stm =
-        dynamic_cast<type::VoidTy *>(item.result_ty)
-            ? body_exp_ty->exp_->UnNx()
-            : new tree::MoveStm(new tree::TempExp(reg_manager->ReturnValue()),
-                                body_exp_ty->exp_->UnEx());
-    frags->PushBack(
-        new frame::ProcFrag(frame::ProcEntryExit1(item.level->frame_, body_stm),
-                            item.level->frame_));
+    frags->PushBack(ProcEntryExit(item.level, body_exp_ty->exp_));
   }
   return nullptr;
 }
