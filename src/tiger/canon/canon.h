@@ -4,6 +4,7 @@
 #include <cstdio>
 #include <list>
 #include <memory>
+#include <stdexcept>
 #include <vector>
 
 #include "tiger/frame/temp.h"
@@ -58,7 +59,7 @@ struct StmAndExp {
 class Traces {
 public:
   Traces() = delete;
-  Traces(nullptr_t) = delete;
+  Traces(std::nullptr_t) = delete;
   explicit Traces(tree::StmList *stm_list) : stm_list_(stm_list) {
     if (stm_list == nullptr)
       throw std::invalid_argument("NULL pointer is not allowed in Traces");
