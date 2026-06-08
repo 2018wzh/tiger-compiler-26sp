@@ -73,10 +73,11 @@ public:
     // true_label, false_label);
     temp::Label *true_label = temp::LabelFactory::NewLabel();
     temp::Label *false_label = temp::LabelFactory::NewLabel();
-    tree::Stm *stm =
+    auto *stm =
         new tree::CjumpStm(tree::NE_OP, this->exp_, new tree::ConstExp(0),
                            true_label, false_label);
-    return Cx(PatchList({&true_label}), PatchList({&false_label}), stm);
+    return Cx(PatchList({&stm->true_label_}), PatchList({&stm->false_label_}),
+              stm);
   }
 };
 
@@ -101,11 +102,12 @@ public:
     // effect and then use an always-false conditional jump.
     temp::Label *true_label = temp::LabelFactory::NewLabel();
     temp::Label *false_label = temp::LabelFactory::NewLabel();
-    tree::Stm *stm = new tree::SeqStm(
-        this->stm_,
+    auto *cjump =
         new tree::CjumpStm(tree::NE_OP, new tree::ConstExp(0),
-                           new tree::ConstExp(0), true_label, false_label));
-    return Cx(PatchList({&true_label}), PatchList({&false_label}), stm);
+                           new tree::ConstExp(0), true_label, false_label);
+    tree::Stm *stm = new tree::SeqStm(this->stm_, cjump);
+    return Cx(PatchList({&cjump->true_label_}),
+              PatchList({&cjump->false_label_}), stm);
   }
 };
 
@@ -504,6 +506,18 @@ tr::ExpAndTy *OpExp::Translate(env::VEnvPtr venv, env::TEnvPtr tenv,
         return new tr::ExpAndTy(new tr::ExExp(new tree::ConstExp(0)),
                                 type::VoidTy::Instance());
       }
+    }
+    if ((this->oper_ == EQ_OP || this->oper_ == NEQ_OP) &&
+        typeid(*left_ty) == typeid(type::StringTy)) {
+      auto *args = new tree::ExpList({left_exp, right_exp});
+      tree::Exp *eq = frame::ExternalCall("string_equal", args);
+      auto *cj =
+          new tree::CjumpStm(this->oper_ == EQ_OP ? tree::NE_OP : tree::EQ_OP,
+                             eq, new tree::ConstExp(0), nullptr, nullptr);
+      return new tr::ExpAndTy(new tr::CxExp(tr::PatchList({&cj->true_label_}),
+                                            tr::PatchList({&cj->false_label_}),
+                                            cj),
+                              type::IntTy::Instance());
     }
     tree::RelOp rel_op;
     switch (this->oper_) {

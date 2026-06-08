@@ -17,6 +17,9 @@ X64RegManager::X64RegManager() : RegManager() {
     temp_map_->Enter(regs_[reg], new std::string(name));
     reg++;
   }
+
+  // Frame pointer is represented explicitly in IR and should print as %rbp.
+  temp_map_->Enter(regs_[FP], new std::string("%rbp"));
 }
 
 temp::TempList *X64RegManager::Registers() {
@@ -107,7 +110,9 @@ public:
   frame::Access *AllocLocal(bool escape) override {
     if (escape) {
       local_count_++;
-      return new InFrameAccess(-local_count_ * word_size_);
+      int offset =
+          -(static_cast<int>(formals_->size()) + local_count_ + 1) * word_size_;
+      return new InFrameAccess(offset);
     } else {
       return new InRegAccess(temp::TempFactory::NewTemp());
     }
@@ -123,6 +128,17 @@ public:
 
 frame::Frame *NewFrame(temp::Label *name, std::list<bool> formals) {
   std::list<frame::Access *> *access_list = new std::list<frame::Access *>();
+
+  if (!formals.empty()) {
+    bool static_link_escape = formals.back();
+    formals.pop_back();
+    if (static_link_escape) {
+      access_list->push_back(new InFrameAccess(-access_list->size() * 8 - 16));
+    } else {
+      access_list->push_back(new InRegAccess(temp::TempFactory::NewTemp()));
+    }
+  }
+
   for (bool escape : formals) {
     if (escape) {
       access_list->push_back(new InFrameAccess(-access_list->size() * 8 - 16));
@@ -196,5 +212,33 @@ tree::Stm *ProcEntryExit1(frame::Frame *frame, tree::Stm *stm) {
   return exit_stm;
 }
 
-assem::Proc *ProcEntryExit3(frame::Frame *frame, assem::InstrList *body) {}
+assem::Proc *ProcEntryExit3(frame::Frame *frame, assem::InstrList *body) {
+  auto x64_frame = dynamic_cast<frame::X64Frame *>(frame);
+  assert(x64_frame);
+
+  std::string prolog = x64_frame->GetLabel() + ":\n";
+  prolog += "subq $8, %rsp\n";
+  prolog += "movq %rbp, (%rsp)\n";
+  prolog += "movq %rsp, %rbp\n";
+  int formal_area = (static_cast<int>(x64_frame->Formals()->size()) + 1) *
+                    x64_frame->word_size_;
+  int local_area =
+      x64_frame->local_count_ == 0
+          ? 0
+          : (static_cast<int>(x64_frame->Formals()->size()) +
+             x64_frame->local_count_ + 1) *
+                x64_frame->word_size_;
+  int frame_size = std::max(formal_area, local_area);
+  if (frame_size > 0)
+    prolog += "subq $" + std::to_string(frame_size) + ", %rsp\n";
+
+  // The interpreter and runtime expect a normal function epilogue.
+  std::string epilog;
+  epilog += "movq %rbp, %rsp\n";
+  epilog += "movq (%rsp), %rbp\n";
+  epilog += "addq $8, %rsp\n";
+  epilog += "retq\n";
+
+  return new assem::Proc(prolog, body, epilog);
+}
 } // namespace frame
