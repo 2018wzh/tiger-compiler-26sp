@@ -278,7 +278,8 @@ temp::Temp *BinopExp::Munch(assem::InstrList &instr_list, std::string_view fs) {
         "movq `s0, `d0", new temp::TempList(dst), new temp::TempList(lhs)));
     instr_list.Append(new assem::OperInstr("addq `s0, `d0",
                                            new temp::TempList(dst),
-                                           new temp::TempList(rhs), nullptr));
+                                           new temp::TempList({rhs, dst}),
+                                           nullptr));
     return dst;
   }
   case tree::BinOp::MINUS_OP: {
@@ -288,7 +289,8 @@ temp::Temp *BinopExp::Munch(assem::InstrList &instr_list, std::string_view fs) {
         "movq `s0, `d0", new temp::TempList(dst), new temp::TempList(lhs)));
     instr_list.Append(new assem::OperInstr("subq `s0, `d0",
                                            new temp::TempList(dst),
-                                           new temp::TempList(rhs), nullptr));
+                                           new temp::TempList({rhs, dst}),
+                                           nullptr));
     return dst;
   }
   case tree::BinOp::MUL_OP: {
@@ -298,7 +300,9 @@ temp::Temp *BinopExp::Munch(assem::InstrList &instr_list, std::string_view fs) {
         "movq `s0, `d0", new temp::TempList(reg_manager->ReturnValue()),
         new temp::TempList(lhs)));
     instr_list.Append(new assem::OperInstr(
-        "imulq `s0", new temp::TempList(reg_manager->ReturnValue()),
+        "imulq `s0",
+        new temp::TempList({reg_manager->ReturnValue(),
+                            reg_manager->GetRegister(frame::X64RegManager::RDX)}),
         new temp::TempList(rhs), nullptr));
     instr_list.Append(
         new assem::MoveInstr("movq `s0, `d0", new temp::TempList(dst),
@@ -308,13 +312,16 @@ temp::Temp *BinopExp::Munch(assem::InstrList &instr_list, std::string_view fs) {
   case tree::BinOp::DIV_OP: {
     auto *rhs = this->right_->Munch(instr_list, fs);
     auto *rax = reg_manager->ReturnValue();
+    auto *rdx = reg_manager->GetRegister(frame::X64RegManager::RDX);
     if (lhs != rax) {
       instr_list.Append(new assem::MoveInstr(
           "movq `s0, `d0", new temp::TempList(rax), new temp::TempList(lhs)));
     }
-    instr_list.Append(new assem::OperInstr("cqto", nullptr, nullptr, nullptr));
-    instr_list.Append(new assem::OperInstr("idivq `s0", nullptr,
-                                           new temp::TempList(rhs), nullptr));
+    instr_list.Append(new assem::OperInstr(
+        "cqto", new temp::TempList(rdx), new temp::TempList(rax), nullptr));
+    instr_list.Append(new assem::OperInstr(
+        "idivq `s0", new temp::TempList({rax, rdx}),
+        new temp::TempList(rhs), nullptr));
     return rax;
   }
   case tree::BinOp::AND_OP: {
@@ -324,7 +331,8 @@ temp::Temp *BinopExp::Munch(assem::InstrList &instr_list, std::string_view fs) {
         "movq `s0, `d0", new temp::TempList(dst), new temp::TempList(lhs)));
     instr_list.Append(new assem::OperInstr("andq `s0, `d0",
                                            new temp::TempList(dst),
-                                           new temp::TempList(rhs), nullptr));
+                                           new temp::TempList({rhs, dst}),
+                                           nullptr));
     return dst;
   }
   case tree::BinOp::OR_OP: {
@@ -334,7 +342,8 @@ temp::Temp *BinopExp::Munch(assem::InstrList &instr_list, std::string_view fs) {
         "movq `s0, `d0", new temp::TempList(dst), new temp::TempList(lhs)));
     instr_list.Append(new assem::OperInstr("orq `s0, `d0",
                                            new temp::TempList(dst),
-                                           new temp::TempList(rhs), nullptr));
+                                           new temp::TempList({rhs, dst}),
+                                           nullptr));
     return dst;
   }
   case tree::BinOp::XOR_OP: {
@@ -344,7 +353,8 @@ temp::Temp *BinopExp::Munch(assem::InstrList &instr_list, std::string_view fs) {
         "movq `s0, `d0", new temp::TempList(dst), new temp::TempList(lhs)));
     instr_list.Append(new assem::OperInstr("xorq `s0, `d0",
                                            new temp::TempList(dst),
-                                           new temp::TempList(rhs), nullptr));
+                                           new temp::TempList({rhs, dst}),
+                                           nullptr));
     return dst;
   }
   case tree::BinOp::LSHIFT_OP: {
@@ -354,13 +364,17 @@ temp::Temp *BinopExp::Munch(assem::InstrList &instr_list, std::string_view fs) {
     if (auto *c = dynamic_cast<tree::ConstExp *>(this->right_)) {
       instr_list.Append(
           new assem::OperInstr("salq $" + std::to_string(c->consti_) + ", `d0",
-                               new temp::TempList(dst), nullptr, nullptr));
+                               new temp::TempList(dst),
+                               new temp::TempList(dst), nullptr));
     } else {
       auto *rhs = this->right_->Munch(instr_list, fs);
-      instr_list.Append(new assem::OperInstr("movq `s0, %rcx", nullptr,
-                                             new temp::TempList(rhs), nullptr));
       instr_list.Append(new assem::OperInstr(
-          "salq %cl, `d0", new temp::TempList(dst), nullptr, nullptr));
+            "movq `s0, %rcx",
+            new temp::TempList(reg_manager->GetRegister(frame::X64RegManager::RCX)),
+            new temp::TempList(rhs), nullptr));
+      instr_list.Append(new assem::OperInstr(
+          "salq %cl, `d0", new temp::TempList(dst), new temp::TempList(dst),
+          nullptr));
     }
     return dst;
   }
@@ -371,13 +385,17 @@ temp::Temp *BinopExp::Munch(assem::InstrList &instr_list, std::string_view fs) {
     if (auto *c = dynamic_cast<tree::ConstExp *>(this->right_)) {
       instr_list.Append(
           new assem::OperInstr("shrq $" + std::to_string(c->consti_) + ", `d0",
-                               new temp::TempList(dst), nullptr, nullptr));
+                               new temp::TempList(dst),
+                               new temp::TempList(dst), nullptr));
     } else {
       auto *rhs = this->right_->Munch(instr_list, fs);
-      instr_list.Append(new assem::OperInstr("movq `s0, %rcx", nullptr,
-                                             new temp::TempList(rhs), nullptr));
       instr_list.Append(new assem::OperInstr(
-          "shrq %cl, `d0", new temp::TempList(dst), nullptr, nullptr));
+            "movq `s0, %rcx",
+            new temp::TempList(reg_manager->GetRegister(frame::X64RegManager::RCX)),
+            new temp::TempList(rhs), nullptr));
+      instr_list.Append(new assem::OperInstr(
+          "shrq %cl, `d0", new temp::TempList(dst), new temp::TempList(dst),
+          nullptr));
     }
     return dst;
   }
@@ -388,13 +406,17 @@ temp::Temp *BinopExp::Munch(assem::InstrList &instr_list, std::string_view fs) {
     if (auto *c = dynamic_cast<tree::ConstExp *>(this->right_)) {
       instr_list.Append(
           new assem::OperInstr("sarq $" + std::to_string(c->consti_) + ", `d0",
-                               new temp::TempList(dst), nullptr, nullptr));
+                               new temp::TempList(dst),
+                               new temp::TempList(dst), nullptr));
     } else {
       auto *rhs = this->right_->Munch(instr_list, fs);
-      instr_list.Append(new assem::OperInstr("movq `s0, %rcx", nullptr,
-                                             new temp::TempList(rhs), nullptr));
       instr_list.Append(new assem::OperInstr(
-          "sarq %cl, `d0", new temp::TempList(dst), nullptr, nullptr));
+            "movq `s0, %rcx",
+            new temp::TempList(reg_manager->GetRegister(frame::X64RegManager::RCX)),
+            new temp::TempList(rhs), nullptr));
+      instr_list.Append(new assem::OperInstr(
+          "sarq %cl, `d0", new temp::TempList(dst), new temp::TempList(dst),
+          nullptr));
     }
     return dst;
   }
@@ -483,8 +505,10 @@ temp::Temp *CallExp::Munch(assem::InstrList &instr_list, std::string_view fs) {
 
   auto temp_it = arg_temps.begin();
   auto reg_it = regs.begin();
+  auto *call_src = new temp::TempList();
   for (; temp_it != arg_temps.end() && reg_it != regs.end();
        ++temp_it, ++reg_it) {
+    call_src->Append(*reg_it);
     if (*temp_it != nullptr && *temp_it == reg_manager->FramePointer()) {
       instr_list.Append(new assem::OperInstr(
           "movq %rbp, `d0", new temp::TempList(*reg_it), nullptr, nullptr));
@@ -497,10 +521,11 @@ temp::Temp *CallExp::Munch(assem::InstrList &instr_list, std::string_view fs) {
 
   auto stack_begin = temp_it;
   int stack_arg_count = std::distance(stack_begin, arg_temps.end());
+  int stack_arg_bytes = stack_arg_count * reg_manager->WordSize();
+  int stack_adjust = ((stack_arg_bytes + 15) / 16) * 16;
   if (stack_arg_count > 0) {
     instr_list.Append(new assem::OperInstr(
-        "subq $" + std::to_string(stack_arg_count * reg_manager->WordSize()) +
-            ", %rsp",
+        "subq $" + std::to_string(stack_adjust) + ", %rsp",
         nullptr, nullptr, nullptr));
   }
 
@@ -513,23 +538,20 @@ temp::Temp *CallExp::Munch(assem::InstrList &instr_list, std::string_view fs) {
   }
 
   std::string call_assem;
-  temp::TempList *call_src = nullptr;
   if (auto *name_exp = dynamic_cast<tree::NameExp *>(this->fun_)) {
     call_assem = "call " + temp::LabelFactory::LabelString(name_exp->name_);
   } else {
     auto *fun_temp = this->fun_->Munch(instr_list, fs);
     call_assem = "call *`s0";
-    call_src = new temp::TempList(fun_temp);
+    call_src->Append(fun_temp);
   }
 
   instr_list.Append(new assem::OperInstr(
-      call_assem, new temp::TempList(reg_manager->ReturnValue()), call_src,
-      nullptr));
+      call_assem, reg_manager->CallerSaves(), call_src, nullptr));
 
   if (stack_arg_count > 0) {
     instr_list.Append(new assem::OperInstr(
-        "addq $" + std::to_string(stack_arg_count * reg_manager->WordSize()) +
-            ", %rsp",
+        "addq $" + std::to_string(stack_adjust) + ", %rsp",
         nullptr, nullptr, nullptr));
   }
 

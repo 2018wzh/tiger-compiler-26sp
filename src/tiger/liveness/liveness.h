@@ -7,6 +7,8 @@
 #include "tiger/liveness/flowgraph.h"
 #include "tiger/util/graph.h"
 
+#include <memory>
+
 namespace live {
 
 using INode = graph::Node<temp::Temp>;
@@ -66,6 +68,7 @@ private:
 
   void LiveMap();
   void InterfGraph();
+  INodePtr GetOrCreateNode(temp::Temp *t);
 };
 
 } // namespace live

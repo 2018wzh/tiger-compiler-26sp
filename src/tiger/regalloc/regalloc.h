@@ -27,7 +27,19 @@ public:
 };
 
 class RegAllocator {
-  /* TODO: Put your lab6 code here */
+public:
+  RegAllocator(frame::Frame *frame, std::unique_ptr<cg::AssemInstr> assem_instr)
+      : frame_(frame), assem_instr_(std::move(assem_instr)), coloring_(nullptr),
+        il_(nullptr), result_(nullptr) {}
+  void RegAlloc();
+  std::unique_ptr<Result> BuildAllocationResult();
+
+private:
+  frame::Frame *frame_;
+  std::unique_ptr<cg::AssemInstr> assem_instr_;
+  temp::Map *coloring_;
+  assem::InstrList *il_;
+  std::unique_ptr<Result> result_;
 };
 
 } // namespace ra

@@ -22,6 +22,8 @@ public:
 
   virtual void Print(FILE *out, temp::Map *m) const = 0;
 
+  virtual temp::TempList *Use() const = 0;
+  virtual temp::TempList *Def() const = 0;
 };
 
 class OperInstr : public Instr {
@@ -35,7 +37,8 @@ public:
       : assem_(std::move(assem)), dst_(dst), src_(src), jumps_(jumps) {}
 
   void Print(FILE *out, temp::Map *m) const override;
-
+  temp::TempList *Use() const override;
+  temp::TempList *Def() const override;
 };
 
 class LabelInstr : public Instr {
@@ -47,7 +50,8 @@ public:
       : assem_(std::move(assem)), label_(label) {}
 
   void Print(FILE *out, temp::Map *m) const override;
-
+  temp::TempList *Use() const override;
+  temp::TempList *Def() const override;
 };
 
 class MoveInstr : public Instr {
@@ -59,7 +63,8 @@ public:
       : assem_(std::move(assem)), dst_(dst), src_(src) {}
 
   void Print(FILE *out, temp::Map *m) const override;
-
+  temp::TempList *Use() const override;
+  temp::TempList *Def() const override;
 };
 
 class InstrList {

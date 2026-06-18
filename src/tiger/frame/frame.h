@@ -80,7 +80,7 @@ public:
   Frame(int word_size, int local_count, temp::Label *name,
         std::list<Access *> *formals)
       : word_size_(word_size), local_count_(local_count), name_(name),
-        formals_(formals) {}
+        frameLabel_(name), formals_(formals) {}
   ~Frame() = default;
   virtual std::string GetLabel() const = 0;
   virtual temp::Label *Name() const = 0;
@@ -88,9 +88,11 @@ public:
   virtual Access *AllocLocal(bool escape) = 0;
   virtual void AllocOutgoSpace(int size) = 0;
   virtual void SetViewShift(tree::Stm *stm) {}
+  virtual std::string GetFrameLabel() const = 0;
   int word_size_;
   int local_count_;
   temp::Label *name_;
+  temp::Label *frameLabel_;
   std::list<Access *> *formals_;
 };
 
@@ -150,6 +152,8 @@ frame::Frame *NewFrame(temp::Label *name, std::list<bool> formals);
 tree::Exp *ExternalCall(std::string_view s, tree::ExpList *args);
 tree::Stm *ProcEntryExit1(frame::Frame *frame, tree::Stm *stm);
 assem::Proc *ProcEntryExit3(frame::Frame *frame, assem::InstrList *body);
+assem::Proc *BuildCompleteProcedure(frame::Frame *frame,
+                                    assem::InstrList *body);
 
 } // namespace frame
 

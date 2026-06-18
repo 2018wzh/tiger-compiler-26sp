@@ -6,6 +6,8 @@
 #include "tiger/liveness/liveness.h"
 #include "tiger/util/graph.h"
 
+#include <vector>
+
 namespace col {
 struct Result {
   Result() : coloring(nullptr), spills(nullptr) {}
@@ -16,7 +18,14 @@ struct Result {
 };
 
 class Color {
-  /* TODO: Put your lab6 code here */
+public:
+  explicit Color(live::LiveGraph live_graph);
+  Result Coloring();
+
+private:
+  live::LiveGraph live_graph_;
+  std::vector<temp::Temp *> registers_;
+  std::vector<temp::Temp *> available_;
 };
 } // namespace col
 

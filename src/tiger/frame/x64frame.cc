@@ -3,6 +3,13 @@
 extern frame::RegManager *reg_manager;
 
 namespace frame {
+namespace {
+
+int AlignTo(int value, int alignment) {
+  return ((value + alignment - 1) / alignment) * alignment;
+}
+
+} // namespace
 
 X64RegManager::X64RegManager() : RegManager() {
   for (int i = 0; i < REG_COUNT; i++)
@@ -124,6 +131,9 @@ public:
     return;
   }
   void SetViewShift(tree::Stm *stm) override { view_shift = stm; }
+  [[nodiscard]] std::string GetFrameLabel() const override {
+    return name_->Name();
+  }
 };
 
 frame::Frame *NewFrame(temp::Label *name, std::list<bool> formals) {
@@ -228,6 +238,8 @@ assem::Proc *ProcEntryExit3(frame::Frame *frame, assem::InstrList *body) {
                           x64_frame->local_count_ + 1) *
                              x64_frame->word_size_;
   int frame_size = std::max(formal_area, local_area);
+  // Keep the stack aligned before calls made from this procedure.
+  frame_size = AlignTo(frame_size, 16);
   if (frame_size > 0)
     prolog += "subq $" + std::to_string(frame_size) + ", %rsp\n";
 
@@ -240,4 +252,12 @@ assem::Proc *ProcEntryExit3(frame::Frame *frame, assem::InstrList *body) {
 
   return new assem::Proc(prolog, body, epilog);
 }
+
+assem::Proc *BuildCompleteProcedure(frame::Frame *frame,
+                                    assem::InstrList *body) {
+  // The x64 backend already knows how to wrap the final body with prologue
+  // and epilogue code, so this helper just forwards to that routine.
+  return ProcEntryExit3(frame, body);
+}
+
 } // namespace frame
