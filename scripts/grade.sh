@@ -232,7 +232,7 @@ test_lab6() {
     local assem=$testcase.s
 
     ./tiger-compiler "$testcase" &>/dev/null
-    gcc -Wl,--wrap,getchar -m64 "$assem" "$runtime_path" -o test.out &>/dev/null
+    gcc --std=gnu17 -Wl,--wrap,getchar -m64 "$assem" "$runtime_path" -o test.out &>/dev/null
     if [ ! -s test.out ]; then
       echo "Error: Link error [$testcase_name]"
       full_score=0
